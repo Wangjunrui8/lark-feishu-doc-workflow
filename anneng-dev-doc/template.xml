@@ -1,0 +1,131 @@
+<title>YYYY-MM-DD-需求名称</title>
+
+<blockquote>
+<p>标题中的时间是本次需求开始开发的时间，如 2025-06-10-驾驶舱移动版一期</p>
+<p>开发开始之前须<b>先建立文档</b>，其中，<b>基础信息</b>部分须在提测之前补充完整</p>
+</blockquote>
+
+<h1>一、基础信息</h1>
+
+<table>
+<colgroup><col width="160"/><col width="560"/></colgroup>
+<tbody>
+<tr><td><b>标题</b></td><td><b>内容</b></td></tr>
+<tr><td><b>产品参与人</b></td><td>待补充（cite type=user）</td></tr>
+<tr><td><b>后端参与人</b></td><td>待补充</td></tr>
+<tr><td><b>前端参与人</b></td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td></tr>
+<tr><td><b>UI参与人</b></td><td>-</td></tr>
+<tr><td><b>测试参与人</b></td><td>待补充</td></tr>
+<tr><td><b>飞书需求URL</b></td><td><a type="url-preview" href="https://project.feishu.cn/chintannengtech/story/detail/需求ID">[需求]需求标题</a></td></tr>
+<tr><td><b>PRD文档URL</b></td><td><cite type="doc" doc-id="PRD的wiki-token"></cite></td></tr>
+<tr><td><b>后端技术设计URL</b></td><td>待补充</td></tr>
+<tr><td><b>UI设计稿URL</b></td><td>-</td></tr>
+<tr><td><b>测试用例URL</b></td><td>待补充</td></tr>
+</tbody>
+</table>
+
+<h1>二、设计方案（选填）</h1>
+
+<h3>2.1 技术选型【技术栈、状态管理库、UI库、其它三方库】</h3>
+
+<p>前端框架：Vue 2.7；状态库：Vuex；路由：Vue Router 3；UI库：Element UI（业务页面）/ antd-vue 审核组件（审单中心）。本次迭代<b>不引入任何新三方依赖</b>。</p>
+
+<h3>2.2 技术概设【方案描述、模块组件构成图、交互状态流转图】</h3>
+
+<p>总体思路：<b>加法原则、最小改动、不影响原业务</b>。改动集中在：页面A（需求点…）与页面B（需求点…）。其中 xx 为<b>后端配置驱动</b>，前端复用已有机制，不硬编码。</p>
+
+<whiteboard type="mermaid">
+flowchart TD
+    A["页面A"] --- A1["需求点1"]
+    B["页面B"] --- B1["需求点2"]
+    C["后端配置"] --- A1
+</whiteboard>
+
+<h3>需求点编号+名称【前端/配置驱动】</h3>
+
+<p>页面位置：菜单 → 页面 → 区块。</p>
+
+<table>
+<thead><tr><th background-color="light-gray">调整项</th><th background-color="light-gray">调整前</th><th background-color="light-gray">调整后</th></tr></thead>
+<tbody>
+<tr><td>字段/文案</td><td>原值</td><td>新值</td></tr>
+<tr><td>校验规则</td><td>原规则</td><td>新规则</td></tr>
+</tbody>
+</table>
+
+<p>涉及文件：<b>src/xxx/组件.vue</b>（改动说明）；<b>src/xxx/config.js</b>（改动说明）。</p>
+
+<pre lang="JavaScript" caption="文件：关键逻辑说明"><code>// 关键代码片段（短），注意转义 &amp; 与 &lt; &gt;
+</code></pre>
+
+<callout emoji="❗" background-color="light-yellow" border-color="yellow">
+<p>避坑说明：如公共方法被多处复用，不直接改，单独新增专属方法。</p>
+</callout>
+
+<h3>历史数据兼容</h3>
+
+<ul>
+<li>上线前在途工单保持不变；</li>
+<li>存量数据不处理；</li>
+<li>驳回/召回重新提交时按最新配置渲染。</li>
+</ul>
+
+<h3>风险与待确认事项</h3>
+
+<ol>
+<li seq="auto"><b>持久化链路</b>：前端编辑的新字段需与后端确认保存方式；</li>
+<li seq="auto"><b>配置依赖</b>：依赖后端配置项的命名/取值约定。</li>
+</ol>
+
+<h3>2.3 非功能需求【性能、安全、浏览器兼容性、埋点】</h3>
+
+<p>与现有 LTC 基线保持一致，本次无新增要求；浏览器兼容沿用现状（Chrome、Edge 最新两个大版本）。</p>
+
+<h1>三、工作量评估（对应飞书, 可截图）</h1>
+
+<p>开发分支：feature/xxx-日期-wjr</p>
+
+<p>前端总人日：<b>Nd（Nh）</b>，其中纯编码约 xh，其余为配置验证、联调与测试。</p>
+
+<table>
+<thead><tr><th background-color="light-gray">系统</th><th background-color="light-gray">模块</th><th background-color="light-gray">需求点描述</th><th background-color="light-gray">开发人员</th><th background-color="light-gray">工作量（人天）</th><th background-color="light-gray">风险与依赖说明</th></tr></thead>
+<tbody>
+<tr><td rowspan="2" vertical-align="middle">LTC</td><td>模块A</td><td>需求点描述</td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td><td>0.5d</td><td>-</td></tr>
+<tr><td>联调与测试</td><td>联调、自测、回归</td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td><td>0.5d</td><td>-</td></tr>
+</tbody>
+</table>
+
+<h1>四、影响面评估（应想尽想）</h1>
+
+<blockquote><p>按照下面的分析路径，站在技术视角上，能想到的尽可能想到，并提供给产品与测试</p></blockquote>
+
+<ul>
+<li><b>页面A</b>：仅 xx 变化，其他共用组件/方法的位置不受影响；</li>
+<li><b>页面B</b>：变化仅限当前业务类型，已加类型守卫，其他类型不受影响；</li>
+<li><b>机制/组件</b>：新增能力仅对带标记的字段生效，不影响现有渲染；</li>
+<li><b>历史/在途数据</b>：保持不变。</li>
+</ul>
+
+<!-- 若原模板文档含影响面 sheet，用原 token 重嵌： -->
+<sheet sheet-id="原sheet-id" token="原token"></sheet>
+
+<h1>五、发布准备</h1>
+
+<h3>5.1 分支</h3>
+
+<p>迭代名：需求名称</p>
+
+<p>feature/xxx-日期-wjr</p>
+
+<h3>5.2 菜单</h3>
+
+<p>无新增菜单。</p>
+
+<h3>5.3 配置变更</h3>
+
+<table>
+<thead><tr><th background-color="light-gray">序号</th><th background-color="light-gray">配置位置</th><th background-color="light-gray">变更内容</th><th background-color="light-gray">责任方</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>基础配置-通用附件配置</td><td>新增/调整内容</td><td>后端</td></tr>
+</tbody>
+</table>
