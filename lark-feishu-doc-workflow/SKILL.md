@@ -3,10 +3,12 @@ name: lark-feishu-doc-workflow
 description: >-
   Create and iteratively update Feishu cloud documents via lark-cli. Generates Feishu-native
   XML content (callouts, mermaid whiteboards, citations, tables), uploads to document library
-  with --parent-position my_library, and supports overwrite/append/block-level updates.
-  Use when the user asks to create a Feishu document, update an existing Feishu doc, write
-  content to Feishu, or iterate on a Feishu cloud document (飞书云文档).
-version: 1.0.0
+  with --parent-position my_library, and supports overwrite/append/block-level edits
+  (str_replace / block_delete / block_insert_after / block_replace) and image/file insertion
+  (media-insert). Use when the user asks to create a Feishu document, update an existing
+  Feishu doc, insert images into a Feishu doc, write content to Feishu, or iterate on a
+  Feishu cloud document (飞书云文档).
+version: 1.1.0
 ---
 
 # 飞书云文档创建与迭代更新工作流
@@ -99,6 +101,8 @@ lark-cli docs +fetch --as user --doc "DOC_ID_OR_URL" --scope outline
 | `full` | 获取完整 XML 内容（迭代前拉取最新内容） |
 | `simple` | 获取文档标题等基本信息 |
 
+需要执行块级操作时加 `--detail with-ids` 获取精确块 ID（如 `+fetch --doc DOC_ID --scope outline --detail with-ids`）。
+
 ### 失败策略
 
 - **使用了不存在的 scope 值** → 仅使用 `outline` / `full` / `simple` 三个已验证值
@@ -126,21 +130,65 @@ cat "工作区路径/updated-content.xml" | lark-cli docs +update --as user --do
 cat "工作区路径/new-section.xml" | lark-cli docs +update --as user --doc "DOC_ID" --command append --content -
 ```
 
-### 块级操作（精确插入/替换）
+### 块级操作（精确编辑）
 
-需要插入到中间位置时使用。先从 `+fetch --scope outline` 获取目标块 ID：
+需要在文档中间位置修改时使用。先用 `--detail with-ids` 获取目标块 ID：
+
+```bash
+lark-cli docs +fetch --as user --doc "DOC_ID" --scope outline --detail with-ids
+```
+
+四类块级命令（均为 `lark-cli docs +update --as user --doc "DOC_ID" --command ...`）：
+
+| 命令 | 必需旗标 | 用途 |
+|------|---------|------|
+| `str_replace` | `--pattern`（`--content` 留空 = 删除匹配文本） | 段落内行内文本替换，最轻量 |
+| `block_insert_after` | `--block-id` + `--content` | 在目标块后插入新块 |
+| `block_replace` | `--block-id` + `--content` | 整块替换目标块 |
+| `block_delete` | `--block-id`（逗号分隔可批量删除） | 删除块 |
 
 ```bash
 lark-cli docs +update --as user --doc "DOC_ID" --command block_insert_after --block-id "TARGET_BLOCK_ID" --content "<p>插入的内容</p>"
 ```
 
+**块级操作关键规则**：
+- `block_replace` / `block_insert_after` 成功后**目标块 ID 会再生**。若要再次操作同一位置，必须重新 fetch with-ids 拿新 ID，否则报 `1011 no changes`
+- fetch 结果中**没有 id 属性的顶层块**（如部分 `<ol>` 有序列表）无法 `block_delete`，改用「本地 XML 编辑 + overwrite」
+- 连续多处修改时，每步操作后都要重新 fetch，不要缓存旧 ID
+
 更新后**必须**重新 `+fetch --scope outline` 验证结构。
+
+### 本地 XML 编辑 + overwrite（批量改动首选）
+
+需要批量删除/修改多个块、或目标块没有 id 时：`+fetch --scope full` 取 XML → 本地编辑（Python ElementTree 或 Edit 工具）→ 整体 `overwrite`。
+
+实测往返安全（富内容不丢失）：
+- `<img>` 图片块：src 媒体 token 持久，overwrite 后 token 会重新生成但图片保留
+- `<whiteboard type="mermaid">`：fetch 时 mermaid 源码内嵌在 XML 中，无损往返
+- 实体引用 `&#xA;` 序列化后变 `&#10;`，无实际影响
+
+### 插入图片 / 文件（media-insert）
+
+```bash
+# --file 只认 CWD 相对路径：先 cd 到图片所在目录
+cd "工作区目录"
+lark-cli docs +media-insert --as user --doc "DOC_ID" --file ./screenshot.png
+
+# 插入到指定位置：匹配目标块文本（图片落在匹配块的顶层祖先处）
+lark-cli docs +media-insert --as user --doc "DOC_ID" --file ./a.png --selection-with-ellipsis "起始文本...结束文本"
+```
+
+- `--file` **只接受 CWD 相对路径**（绝对路径会失败），先 `cd` 再传 `./文件名`
+- `--selection-with-ellipsis` 落在匹配块的**顶层祖先**：匹配文本在 callout/表格内时，图片会插到容器外面；文本多处出现时用 `start...end` 消歧
+- 可选 `--caption`（图注）、`--align left|center|right`、`--width/--height`、`--type file`（插文件卡片）、`--before`（插到匹配块前）
 
 ### 失败策略
 
 - **overwrite 丢失用户手动修改** → 更新前先 `+fetch --scope full` 拉取最新内容并备份到本地；将用户修改合并后再 overwrite
 - **append 位置不对** → append 只能追加到末尾；需在中间插入改用 `block_insert_after`
-- **块 ID 失效** → 文档更新后块 ID 可能变化，每次操作前重新 fetch outline 获取最新 ID，不要缓存
+- **块 ID 失效 / 报 `1011 no changes`** → 上一次 block 操作使目标块 ID 再生；每次操作前重新 `+fetch --detail with-ids` 获取最新 ID，不要缓存
+- **目标块没有 id 属性**（部分顶层 `<ol>` 等）→ 无法块级删除/替换，改用本地 XML 编辑 + overwrite
+- **stdout 混入非 JSON 内容** → lark-cli 输出可能带 "Fetching..." 前缀或版本更新提示 JSON；程序解析结果时从第一个 `{` 开始 json.loads
 - **更新后验证失败** → 若本地有上版 XML 备份，重新 overwrite 恢复；否则告知用户现状并协商修复
 
 ## 完整端到端示例
@@ -211,6 +259,9 @@ lark-cli docs +fetch --as user --doc "Abc123xyz" --scope outline
 | lark-cli: command not found | Node.js 全局 bin 不在 PATH 中 | 命令前加 `export PATH="/g/program files/nodejs/node_global:$PATH"` |
 | pipe 在 cmd.exe 下无输出 | cmd.exe pipe 行为与 bash 不同 | 用 `bash -c "..."` 包裹整条命令 |
 | overwrite 后用户修改丢失 | overwrite 替换全部内容 | 先 fetch full 备份，合并后再更新 |
-| block_insert_after 找不到块 ID | 文档更新后 ID 变化 | 每次操作前重新 fetch outline |
+| 块操作报 `1011 no changes` | 上次 block 操作后目标块 ID 已再生 | 每次操作前重新 `+fetch --detail with-ids` 拿新 ID |
+| 想删的块没有 id 属性 | 部分顶层块（如 `<ol>`）fetch 时无 id | 本地 XML 编辑 + overwrite 整体处理 |
+| media-insert 插不进图 | `--file` 只认 CWD 相对路径 | 先 `cd` 到图片目录，传 `./文件名` |
+| stdout 解析 JSON 失败 | 输出可能带 "Fetching..." 前缀或更新提示 JSON | 从第一个 `{` 开始 json.loads 切片解析 |
 | callout/whiteboard 不渲染 | XML 标签格式错误 | 严格按速查模板书写，注意属性名用连字符 |
 | 认证失败 401 | token 过期 | 提示用户执行 `lark-cli auth login` |

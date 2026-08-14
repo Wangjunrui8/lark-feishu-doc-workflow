@@ -172,15 +172,20 @@ lark-cli im +messages-search \
 ### 提取命令
 
 ```bash
-# 搜索本周创建的云文档（按时间范围 + docx 类型过滤）
+# 搜索本周创建的云文档（--created-by-me 限定我创建，时间窗用 created-since/until）
 lark-cli drive +search \
   --query "" \
-  --docs-types docx \
-  --start-time "YYYY-MM-DDT00:00:00+08:00" \
-  --end-time "YYYY-MM-DDT23:59:59+08:00" \
+  --doc-types docx \
+  --created-by-me \
+  --created-since "YYYY-MM-DDT00:00:00+08:00" \
+  --created-until "YYYY-MM-DDT23:59:59+08:00" \
   --as user \
   --format json
 ```
+
+> 旗标易错点：是 `--doc-types`（非 `--docs-types`）、`--created-since/--created-until`（非 `--start-time/--end-time`），写错会报 unknown flag。
+>
+> ⚠️ 空查询陷阱：`--query ""`（空关键词）+ 时间窗可能**静默返回 total=0**（实测本周明明有文档也搜不到）。结果为空时不要直接判定"本周无文档"，必须用业务关键词（项目名、"日报"、"方案"、"文档"等）补搜 1~2 次并合并去重；仍为空才可标注「本周未检索到新建文档」。
 
 ### 数据处理流程
 
@@ -209,43 +214,27 @@ lark-cli drive +search \
 
 ## 5. 大前端项目信息收集表
 
-多维表格，用于收集大前端项目的需求信息。与数据源 1（信息共享表）互为补充，需采用相同的筛选规则提取当前用户相关记录。
+> ⚠️ 收集表与数据源 1（信息共享表）实为**同一张多维表格**（base `HZpJbvuLPaEFBXskUi1cyouonLh` / table `tbl6a70HjOPmq5AS`）下的不同视图：收集表对应「财金/国际域」视图 `vewcTeBYqU`（带业务域过滤），数据源 1 对应「全部数据」视图 `vewu9HlQU8`（无过滤）。字段结构完全一致。旧的独立收集表 token（`QW4Yb41d6aG28msz7fNc356hn6e` 等）已失效，勿再使用。
 
 ### 定位信息
 
-- **URL**: `https://gnl7hh3k42.feishu.cn/base/QW4Yb41d6aG28msz7fNc356hn6e?table=tblf7W8KfVj1fZkZ&view=vewK87mK8K`
-- **base_token**: `QW4Yb41d6aG28msz7fNc356hn6e`
-- **table_id**: `tblf7W8KfVj1fZkZ`
-- **view_id**: `vewK87mK8K`
+- **wiki URL**: `https://gnl7hh3k42.feishu.cn/wiki/Z63Ewst6SiAtDwkJZqIcdCMvnBg?table=tbl6a70HjOPmq5AS&view=vewcTeBYqU`
+- **base_token**: `HZpJbvuLPaEFBXskUi1cyouonLh`
+- **table_id**: `tbl6a70HjOPmq5AS`
+- **view_id**: `vewcTeBYqU`（财金/国际域视图）
 
 ### 已知字段
 
-> ⚠️ 首次执行时**必须**先运行 `+field-list` 获取最新字段结构，下方字段仅为初始参考，实际字段名/ID 可能不同。
-
-| 字段名（参考） | 类型 | 用途 |
-|----------------|------|------|
-| 需求名称 | text | 需求标题 |
-| 状态 | select | 当前状态 |
-| 优先级 | select | P0 / P1 / P2 |
-| 业务子域 | select | 需求所属业务域（用于按子域分组展示） |
-| 进度 | number(progress) | 完成百分比 |
-| 需求 Owner | user(单选) | 需求负责人（第一层筛选条件） |
-| 任务执行人 | user(多选) | 负责开发的人员（第二层筛选条件） |
+与数据源 1 完全一致（同一张表），直接复用数据源 1 的字段列表（需求名称 fldaxqIJ1m、状态 fldJjwpiC3、优先级 fld08ljyli、业务子域 fldCBfoWVq、进度 fldXO40LQ3、需求Owner fldRJZTWeG、任务执行人 fldp8FSfnw、上线时间 flddOQSEwM 等），无需重复 `+field-list`。
 
 ### 提取命令
 
 ```bash
-# 1. 获取字段结构（首次执行或字段不确定时必须运行）
-lark-cli base +field-list \
-  --base-token QW4Yb41d6aG28msz7fNc356hn6e \
-  --table-id tblf7W8KfVj1fZkZ \
-  --as user
-
-# 2. 拉取记录（使用默认视图）
+# 拉取记录（使用「财金/国际域」视图）
 lark-cli base +record-list \
-  --base-token QW4Yb41d6aG28msz7fNc356hn6e \
-  --table-id tblf7W8KfVj1fZkZ \
-  --view-id vewK87mK8K \
+  --base-token HZpJbvuLPaEFBXskUi1cyouonLh \
+  --table-id tbl6a70HjOPmq5AS \
+  --view-id vewcTeBYqU \
   --as user \
   --format json
 ```
@@ -254,13 +243,14 @@ lark-cli base +record-list \
 
 筛选规则（单层）：
 - 仅保留「需求 Owner」为当前登录用户的记录，**不论需求状态，全部纳入周报**
+- **例外**：状态为「已发布」的记录，仅保留「上线时间」落在**本周**范围内的记录，非本周上线的不纳入周报
 - 不满足此条件的记录一律丢弃
 
 筛选后按**业务子域**分组。
 
 ### 与数据源 1 的合并处理
 
-两张表的记录在筛选后需**合并去重**再归入周报：
-- 以「需求名称」为去重键，若两张表存在同名需求，优先保留信息共享表（数据源 1）的记录（字段更完整）
-- 仅出现在收集表中的需求，正常按业务子域分组纳入周报
+两个视图属于同一张表，筛选后的记录会大量重叠，需**合并去重**再归入周报：
+- 以「需求名称」为去重键，同名记录只保留一份（字段完全一致，无需比较优先级）
+- 仅出现在某一视图中的需求，正常按业务子域分组纳入周报
 - 合并后的记录统一参与 Step 3 分组整理

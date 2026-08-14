@@ -119,6 +119,8 @@ lark-cli drive +search \
 
 > 注意：旗标是 `--doc-types`（非 --docs-types）、`--created-since/--created-until`（非 --start-time/--end-time），写错会报 unknown flag。
 
+> ⚠️ 空查询陷阱：`--query ""`（空关键词）+ 时间窗可能**静默返回 total=0**（实测本周明明有文档也搜不到）。结果为空时不要直接判定"本周无文档"，必须用业务关键词（项目名、"日报"、"方案"、"文档"等）补搜 1~2 次并合并去重；仍为空才可标注「本周未检索到新建文档」。
+
 对搜索到的每篇文档，执行以下处理流程：
 
 **Step 1 — 读取内容并过滤空文档**：
@@ -140,18 +142,14 @@ lark-cli drive +search \
 
 ### 2.5 大前端项目信息收集表
 
-```bash
-# 获取字段结构（首次执行时必须确认字段名）
-lark-cli base +field-list \
-  --base-token QW4Yb41d6aG28msz7fNc356hn6e \
-  --table-id tblf7W8KfVj1fZkZ \
-  --as user
+> 收集表与 2.1 共享表实为**同一张多维表格**（base `HZpJbvuLPaEFBXskUi1cyouonLh` / table `tbl6a70HjOPmq5AS`）下的不同视图：收集表对应「财金/国际域」视图 `vewcTeBYqU`（带业务域过滤），2.1 对应「全部数据」视图 `vewu9HlQU8`（无过滤）。字段结构完全一致，无需重复 field-list。旧的独立收集表 token（QW4Yb41d…）已失效，勿再使用。
 
-# 拉取记录（使用默认视图）
+```bash
+# 拉取记录（使用「财金/国际域」视图）
 lark-cli base +record-list \
-  --base-token QW4Yb41d6aG28msz7fNc356hn6e \
-  --table-id tblf7W8KfVj1fZkZ \
-  --view-id vewK87mK8K \
+  --base-token HZpJbvuLPaEFBXskUi1cyouonLh \
+  --table-id tbl6a70HjOPmq5AS \
+  --view-id vewcTeBYqU \
   --as user \
   --format json
 ```
@@ -161,7 +159,7 @@ lark-cli base +record-list \
 - **例外**：状态为「已发布」的记录，仅保留「上线时间」落在本周范围内的记录，非本周上线的不纳入周报
 - 不满足此条件的记录一律丢弃
 
-**合并去重**：将 2.1 和 2.5 两张表的筛选结果以「需求名称」为键合并去重，同名需求优先保留信息共享表的记录（字段更完整），仅出现在收集表中的需求正常纳入。
+**合并去重**：两个视图属于同一张表，记录会大量重叠，必须以「需求名称」为键合并去重；同名记录只保留一份（字段完全一致），仅出现在某一视图中的需求正常纳入。
 
 ### 2.6 个人日报
 
