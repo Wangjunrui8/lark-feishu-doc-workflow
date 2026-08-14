@@ -184,4 +184,4 @@
 - **交付方式**：飞书私信（bot 发送 Markdown 全文）
   - `lark-cli im +messages-send --as bot --user-id <收件人 open_id> --markdown "<周报全文>"`
   - 内容过长时发送精简版并说明
-- **周报标题**：`YYYY年MM月DD日 - MM月DD日 工作周报`（使用本周一和周日日期）
+- **周报标题**：`YYYY年MM月DD日 - MM月DD日 工作周报`（使用本周一和周五日期）
