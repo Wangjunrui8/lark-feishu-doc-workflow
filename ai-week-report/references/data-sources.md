@@ -2,59 +2,60 @@
 
 ## 目录
 
-1. [大前端项目信息共享表（多维表格）](#1-大前端项目信息共享表)
+1. [项目信息共享表（多维表格）](#1-项目信息共享表)
 2. [飞书任务](#2-飞书任务)
 3. [飞书消息](#3-飞书消息)
 4. [本周创建的文档](#4-本周创建的文档)
-5. [大前端项目信息收集表（多维表格）](#5-大前端项目信息收集表)
+5. [项目信息收集视图（可选）](#5-项目信息收集视图可选)
+
+> 下文 `<BASE_TOKEN>` / `<TABLE_ID>` / `<VIEW_ID_ALL>` / `<VIEW_ID_FILTERED>` 等占位符均对应 SKILL.md「个人配置」表中的配置项。
 
 ---
 
-## 1. 大前端项目信息共享表
+## 1. 项目信息共享表
 
-多维表格，记录大前端团队所有项目的需求与任务跟踪信息。
+团队用于跟踪需求与任务的多维表格。
 
 ### 定位信息
 
-- **wiki URL**: `https://gnl7hh3k42.feishu.cn/wiki/Z63Ewst6SiAtDwkJZqIcdCMvnBg?table=tbl6a70HjOPmq5AS&view=vewu9HlQU8`
-- **base_token**: `HZpJbvuLPaEFBXskUi1cyouonLh`
-- **table_id**: `tbl6a70HjOPmq5AS`
-- **view_id**: `vewu9HlQU8`
+- **base_token**: `<BASE_TOKEN>`
+- **table_id**: `<TABLE_ID>`
+- **view_id**: `<VIEW_ID_ALL>`（全量视图）
 
-### 已知字段
+### 期望字段
 
-| 字段名 | 字段 ID | 类型 | 用途 |
-|--------|---------|------|------|
-| 需求名称 | fldaxqIJ1m | text | 需求标题 |
-| 状态 | fldJjwpiC3 | select | 当前状态（需求沟通/待排期/已排期/开发中/测试中/待发布/已发布/废弃/暂停/临时） |
-| 优先级 | fld08ljyli | select | P0 / P1 / P2 |
-| 业务子域 | fldCBfoWVq | select | 需求所属业务域（用于按子域分组展示） |
-| 进度 | fldXO40LQ3 | number(progress) | 完成百分比（0~1） |
-| 需求Owner | fldRJZTWeG | user(单选) | 需求负责人（第一层筛选条件） |
-| 任务执行人 | fldp8FSfnw | user(多选) | 负责开发的人员（第二层筛选条件） |
-| 上线时间 | flddOQSEwM | datetime | 已发布需求的上线日期 |
-| 最新进展记录 | fldq2mc2Al | text | 最新进展描述 |
-| 是否延期 | fld90fZ6tK | formula | 自动计算的延期状态 |
-| 任务等级 | fld8yZKqGb | select | 技术难度（1简单/2中等/3困难/4极其困难） |
-| 产品 | fldLyzNdB9 | user | 产品负责人 |
-| 提测时间 | fldR1ZTLIl | datetime | 计划提测日期 |
+首次执行时先用 `lark-cli base +field-list` 获取真实字段结构，再按下表语义对应到实际字段名：
 
-> 实际执行时应先 `lark-cli base +field-list` 获取最新字段结构，以上仅为初始参考。
+| 字段语义 | 类型 | 用途 |
+|--------|------|------|
+| 需求名称 | text | 需求标题 |
+| 状态 | select | 当前状态（需求沟通/待排期/已排期/开发中/测试中/待发布/已发布/废弃/暂停/临时，以表内实际选项为准） |
+| 优先级 | select | P0 / P1 / P2 |
+| 业务子域 | select | 需求所属业务域（用于按子域分组展示；无此字段则按项目/模块归类） |
+| 进度 | number(progress) | 完成百分比（0~1） |
+| 需求Owner | user(单选) | 需求负责人（第一层筛选条件） |
+| 任务执行人 | user(多选) | 负责开发的人员（第二层筛选条件） |
+| 上线时间 | datetime | 已发布需求的上线日期 |
+| 最新进展记录 | text | 最新进展描述 |
+| 是否延期 | formula | 自动计算的延期状态 |
+| 任务等级 | select | 技术难度 |
+| 产品 | user | 产品负责人 |
+| 提测时间 | datetime | 计划提测日期 |
 
 ### 提取命令
 
 ```bash
 # 1. 获取字段结构（首次执行时）
 lark-cli base +field-list \
-  --base-token HZpJbvuLPaEFBXskUi1cyouonLh \
-  --table-id tbl6a70HjOPmq5AS \
+  --base-token <BASE_TOKEN> \
+  --table-id <TABLE_ID> \
   --as user
 
-# 2. 按当前用户筛选"我负责的"记录
+# 2. 拉取全量视图记录，再按当前用户筛选
 lark-cli base +record-list \
-  --base-token HZpJbvuLPaEFBXskUi1cyouonLh \
-  --table-id tbl6a70HjOPmq5AS \
-  --view-id vewu9HlQU8 \
+  --base-token <BASE_TOKEN> \
+  --table-id <TABLE_ID> \
+  --view-id <VIEW_ID_ALL> \
   --as user \
   --format json
 
@@ -192,11 +193,11 @@ lark-cli drive +search \
 对搜索到的每篇文档，执行以下三步处理：
 
 **Step 1 — 读取内容并过滤空文档**：
-- 使用 `lark-cli docs +fetch --doc-id <token>` 读取文档正文
+- 使用 `lark-cli docs +fetch --doc <token>` 读取文档正文
 - **内容不能为空**：跳过纯模板、空白页或无实质内容的文档，只保留有实质内容的文档
 
 **Step 2 — 关联到具体任务**：
-- 将每篇文档的标题和关键内容与数据源 1（大前端项目信息共享表）中的记录（需求名称、业务子域）进行匹配
+- 将每篇文档的标题和关键内容与数据源 1（项目信息共享表）中的记录（需求名称、业务子域）进行匹配
 - **能关联到已有任务的文档**：归入对应业务子域的「本周工作」章节，作为该任务的补充说明（如"相关文档：《XX方案》—— 要点摘要"）
 - **无法关联到已有任务的文档**：归入「本周工作」下的**「文档沉淀」**分组，作为独立产出展示
 
@@ -206,35 +207,28 @@ lark-cli drive +search \
   - 核心结论、决策、方案要点
   - 重要的技术设计或架构变更
   - 创新性思路或方法论沉淀
-- 这些价值要素同时沉淀到**「四、建议」**章节，作为"能力提升建议"和"解决问题带来的价值"两个子板块的数据支撑
-
-
+- 这些价值要素同时沉淀到**「五、建议」**章节，作为"能力提升建议"和"解决问题带来的价值"两个子板块的数据支撑
 
 ---
 
-## 5. 大前端项目信息收集表
+## 5. 项目信息收集视图（可选）
 
-> ⚠️ 收集表与数据源 1（信息共享表）实为**同一张多维表格**（base `HZpJbvuLPaEFBXskUi1cyouonLh` / table `tbl6a70HjOPmq5AS`）下的不同视图：收集表对应「财金/国际域」视图 `vewcTeBYqU`（带业务域过滤），数据源 1 对应「全部数据」视图 `vewu9HlQU8`（无过滤）。字段结构完全一致。旧的独立收集表 token（`QW4Yb41d6aG28msz7fNc356hn6e` 等）已失效，勿再使用。
+> 若团队在同一张多维表格下维护了按业务域过滤的第二个视图，则作为补充数据源拉取；未配置 `<VIEW_ID_FILTERED>` 时跳过本节。与数据源 1 为同一张表，字段结构完全一致，直接复用数据源 1 的字段列表，无需重复 `+field-list`。
 
 ### 定位信息
 
-- **wiki URL**: `https://gnl7hh3k42.feishu.cn/wiki/Z63Ewst6SiAtDwkJZqIcdCMvnBg?table=tbl6a70HjOPmq5AS&view=vewcTeBYqU`
-- **base_token**: `HZpJbvuLPaEFBXskUi1cyouonLh`
-- **table_id**: `tbl6a70HjOPmq5AS`
-- **view_id**: `vewcTeBYqU`（财金/国际域视图）
-
-### 已知字段
-
-与数据源 1 完全一致（同一张表），直接复用数据源 1 的字段列表（需求名称 fldaxqIJ1m、状态 fldJjwpiC3、优先级 fld08ljyli、业务子域 fldCBfoWVq、进度 fldXO40LQ3、需求Owner fldRJZTWeG、任务执行人 fldp8FSfnw、上线时间 flddOQSEwM 等），无需重复 `+field-list`。
+- **base_token**: `<BASE_TOKEN>`
+- **table_id**: `<TABLE_ID>`
+- **view_id**: `<VIEW_ID_FILTERED>`（域过滤视图）
 
 ### 提取命令
 
 ```bash
-# 拉取记录（使用「财金/国际域」视图）
+# 拉取记录（使用域过滤视图）
 lark-cli base +record-list \
-  --base-token HZpJbvuLPaEFBXskUi1cyouonLh \
-  --table-id tbl6a70HjOPmq5AS \
-  --view-id vewcTeBYqU \
+  --base-token <BASE_TOKEN> \
+  --table-id <TABLE_ID> \
+  --view-id <VIEW_ID_FILTERED> \
   --as user \
   --format json
 ```

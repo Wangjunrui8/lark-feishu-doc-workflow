@@ -8,7 +8,7 @@ description: >-
   (media-insert). Use when the user asks to create a Feishu document, update an existing
   Feishu doc, insert images into a Feishu doc, write content to Feishu, or iterate on a
   Feishu cloud document (飞书云文档).
-version: 1.1.0
+version: 1.2.0
 ---
 
 # 飞书云文档创建与迭代更新工作流
@@ -16,7 +16,7 @@ version: 1.1.0
 ## 关键约束
 
 1. **强制 stdin pipe** — 禁止 `--content @绝对路径`（Windows 下必定失败），一律用 `cat file | lark-cli ... --content -`
-2. **PATH 前置** — 每条命令前加 `export PATH="/g/program files/nodejs/node_global:$PATH"`
+2. **PATH 检查** — 新 shell 找不到 `lark-cli` 时，先把 npm 全局 bin 目录加入 PATH（用 `npm prefix -g` 或 `where lark-cli` 定位安装目录，再 `export PATH="<npm全局bin目录>:$PATH"`，路径含空格时整体加引号）
 3. **Shell 要求** — pipe 语法需要 Git Bash；若在 cmd.exe 下执行，改用 `bash -c "cat file | lark-cli ..."`
 4. **认证** — 所有命令加 `--as user` 使用用户态身份
 
@@ -67,7 +67,6 @@ callout 可用颜色：`light-blue` / `light-green` / `light-red` / `light-yello
 ## 步骤二：创建文档
 
 ```bash
-export PATH="/g/program files/nodejs/node_global:$PATH"
 cat "工作区路径/doc-content.xml" | lark-cli docs +create --as user --parent-position my_library --content -
 ```
 
@@ -87,7 +86,6 @@ cat "工作区路径/doc-content.xml" | lark-cli docs +create --as user --parent
 ## 步骤三：验证文档结构
 
 ```bash
-export PATH="/g/program files/nodejs/node_global:$PATH"
 lark-cli docs +fetch --as user --doc "DOC_ID_OR_URL" --scope outline
 ```
 
@@ -107,7 +105,7 @@ lark-cli docs +fetch --as user --doc "DOC_ID_OR_URL" --scope outline
 
 - **使用了不存在的 scope 值** → 仅使用 `outline` / `full` / `simple` 三个已验证值
 - **返回内容与预期不符** → 列出缺失/多余章节；差异较大时重新 overwrite 而非局部修补
-- **doc_id 无效** → 检查格式（支持短 ID 如 `HnkndIO6oogAPZxefsAcmtnxnkf` 和完整 URL）；文档不存在则重新创建
+- **doc_id 无效** → 检查格式（支持短 ID 如 `Abc123xyz` 和完整 URL）；文档不存在则重新创建
 
 ## 步骤四：迭代更新
 
@@ -118,7 +116,6 @@ lark-cli docs +fetch --as user --doc "DOC_ID_OR_URL" --scope outline
 最常用。修改本地 XML 后整体替换文档内容：
 
 ```bash
-export PATH="/g/program files/nodejs/node_global:$PATH"
 cat "工作区路径/updated-content.xml" | lark-cli docs +update --as user --doc "DOC_ID" --command overwrite --content -
 ```
 
@@ -222,7 +219,6 @@ flowchart LR
 **2) 创建文档：**
 
 ```bash
-export PATH="/g/program files/nodejs/node_global:$PATH"
 cat "workspace/doc.xml" | lark-cli docs +create --as user --parent-position my_library --content -
 # → 获取 doc_id: Abc123xyz
 ```
@@ -256,7 +252,7 @@ lark-cli docs +fetch --as user --doc "Abc123xyz" --scope outline
 | 坑点 | 原因 | 正确做法 |
 |------|------|----------|
 | `--content @C:\path\file.xml` 失败 | Windows 绝对路径不被 lark-cli 正确解析 | 用 `cat file \| lark-cli ... --content -` |
-| lark-cli: command not found | Node.js 全局 bin 不在 PATH 中 | 命令前加 `export PATH="/g/program files/nodejs/node_global:$PATH"` |
+| lark-cli: command not found | Node.js 全局 bin 不在 PATH 中 | 用 `npm prefix -g` 定位目录后 `export PATH="<npm全局bin目录>:$PATH"` |
 | pipe 在 cmd.exe 下无输出 | cmd.exe pipe 行为与 bash 不同 | 用 `bash -c "..."` 包裹整条命令 |
 | overwrite 后用户修改丢失 | overwrite 替换全部内容 | 先 fetch full 备份，合并后再更新 |
 | 块操作报 `1011 no changes` | 上次 block 操作后目标块 ID 已再生 | 每次操作前重新 `+fetch --detail with-ids` 拿新 ID |

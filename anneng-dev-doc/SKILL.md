@@ -1,27 +1,39 @@
 ---
 name: anneng-dev-doc
-description: 为王均睿编写安能 LTC 前端团队的飞书开发文档（开发文档/技术文档/详设）。遵循团队模板骨架（基础信息/设计方案/工作量评估/影响面评估/发布准备）与 2026 目录历史文档的写作风格，用 lark-cli 读取 PRD 与范例文档、生成 DocxXML 并写入目标 wiki 文档。当用户提到写开发文档、技术文档、详设文档、提测文档、根据 PRD 写文档、填充开发文档模板时使用。
-version: 1.0.0
+description: 按团队开发文档模板骨架与写作风格，结合 PRD 与实际代码改动，编写飞书前端开发文档（开发文档/技术文档/详设）。用 lark-cli 读取 PRD 与范例文档、生成 DocxXML 并写入目标 wiki 文档。当用户提到写开发文档、技术文档、详设文档、提测文档、根据 PRD 写文档、填充开发文档模板时使用。
+version: 2.0.0
 ---
 
-# 安能前端开发文档编写
+# 前端开发文档编写（团队模板风格）
 
 把 PRD + 实际代码改动，写成团队风格的飞书开发文档，写入用户给的目标 wiki 文档（通常是当天新建的空模板《YYYY-MM-DD-需求名》）。
+
+## 个人配置（首次使用前填写）
+
+首次触发本技能时，先与用户确认下表配置并**把确认后的值写回本表**，供后续会话直接读取。
+
+| 项 | 值 | 说明 |
+| --- | --- | --- |
+| 用户姓名 / open_id | `<你的姓名>` / `<你的 open_id>` | 基础信息与工作量表中 @ 自己用；open_id 可用 `lark-cli contact +search-user --query "<你的姓名>" --as user` 查 |
+| 团队开发文档目录页 | `<目录页 wiki URL>` | 存放历史开发文档的 wiki 目录页，用于步骤 3 学习团队写作风格 |
+| 技术栈一句话 | `<框架/状态管理/路由/UI 库及版本>` | 2.1 技术选型的固定描述，如「Vue 2.7 / Vuex / Vue Router 3 / Element UI」 |
+| 开发分支命名约定 | `feature/xxx-日期-<后缀>` | 发布准备 5.1 分支小节的写法 |
+| 飞书项目空间名 | `<project.feishu.cn 空间名>` | 基础信息表「飞书需求URL」的链接前缀 |
 
 ## 工作流（按序执行，用 TodoWrite 跟踪）
 
 1. **拉目标文档**：`+fetch` 目标 wiki，确认是空模板还是已有内容；**已有内容必须先备份**（保存 fetch 结果到工作区）。
 2. **拉 PRD**：`+fetch --doc-format markdown`，记录 revision、需求点编号（4.1/5.2 这类）、校验规则表、历史数据兼容等章节。
-3. **学风格**：`+fetch` 2026 目录页 `https://gnl7hh3k42.feishu.cn/wiki/LmbEw96QFiPKAmkVWOrcw6Hqn7e`——返回的是 `<sub-page-list>`，从里面挑 1-2 篇**同域且已填写**的文档（标题含"并网/审单"优先）再 `+fetch` 其 doc-id 学习。不要照抄目录页本身。
+3. **学风格**：`+fetch` 配置表中的团队开发文档目录页——返回的是 `<sub-page-list>`，从里面挑 1-2 篇**同业务域且已填写完整**的文档再 `+fetch` 其 doc-id 学习。不要照抄目录页本身。
 4. **收集技术事实**：优先用当前会话已有的代码分析；缺什么补什么——`git status`/`git diff`、`git branch --show-current`（发布准备要写分支）、关键文件路径与接口路径。工作量数字与用户已有的工时拆分保持一致。
 5. **生成 XML**：以 [template.xml](template.xml) 为骨架填充。写 `--content` 前按 CLI 要求执行 `lark-cli skills read lark-doc references/lark-doc-xml.md` 获取最新 XML 规则。
 6. **写入**：`+update --command overwrite`（空模板场景）；**文档里已有用户手改内容或重要图片时改用块级操作**（见避坑）。
 7. **验证**：`+fetch --scope outline` 核对章节齐全，把文档链接发给用户，并列出留给用户补充的"待补充"项。
 
-## lark-cli 执行要点（本机 Windows + cmd）
+## lark-cli 执行要点（Windows + cmd 环境）
 
-- 每条命令用 `bash -c` 包裹并前置 PATH：
-  `bash -c 'export PATH="/g/program files/nodejs/node_global:$PATH" && lark-cli ...'`
+- 每条命令用 `bash -c` 包裹；shell 找不到 lark-cli 时先 export PATH（`npm prefix -g` 定位 npm 全局 bin 目录）：
+  `bash -c 'export PATH="<npm全局bin目录>:$PATH" && lark-cli ...'`
 - 内容一律 stdin pipe：`cat "工作区/doc.xml" | lark-cli docs +update --as user --doc "<ID>" --command overwrite --content -`；**禁止** `--content @绝对路径`。
 - 所有命令带 `--as user`。大输出先重定向到工作区文件再 Read。
 - fetch 返回的 `document_id` 可直接作为 `--doc`（wiki URL 也行，document_id 更稳）。
@@ -29,13 +41,13 @@ version: 1.0.0
 ## 团队风格要点（从范例文档提炼）
 
 - 保留模板骨架：标题 `YYYY-MM-DD-需求名`、开头两条引言 blockquote、五个一级章节；章节内用 h3/h4。
-- **基础信息表**：产品/后端/前端/UI/测试参与人、飞书需求URL（project.feishu.cn 链接，`<a type="url-preview">`）、PRD文档URL（`<cite type="doc">`）、后端技术设计/UI设计稿/测试用例 URL。@人必须先用 `lark-cli contact +search-user --query "名字" --as user` 查 open_id 再写 `<cite type="user" user-id="ou_xxx">`；**查不到就写"待补充"，绝不编造**。用户本人：王均睿 `ou_532219c8f688a56f453bd32430ba8c17`。
-- **2.1 技术选型**：一句话（Vue 2.7 / Vuex / Vue Router 3 / Element UI + antd-vue 审核组件；是否引入新依赖）。
+- **基础信息表**：产品/后端/前端/UI/测试参与人、飞书需求URL（project.feishu.cn 链接，`<a type="url-preview">`）、PRD文档URL（`<cite type="doc">`）、后端技术设计/UI设计稿/测试用例 URL。@人必须先用 `lark-cli contact +search-user --query "名字" --as user` 查 open_id 再写 `<cite type="user" user-id="ou_xxx">`；**查不到就写"待补充"，绝不编造**。用户本人按配置表的姓名与 open_id 填写。
+- **2.1 技术选型**：一句话写清配置表中的技术栈（框架/状态管理/路由/UI 库），并说明是否引入新依赖。
 - **2.2 技术概设**：总体思路一段（加法原则/配置驱动等）+ mermaid 结构图（`<whiteboard type="mermaid">`，注意 mermaid 里的 `>` 也要转义成 `&gt;` 或改用 `---`）；随后**每个需求点一个 h3 小节**：页面位置 → 调整前/后或字段规则表 → 涉及文件（`<b>` 加粗完整路径）→ 关键代码 `<pre lang="JavaScript" caption="文件：说明"><code>...</code></pre>`（短片段即可）→ 易踩坑点用黄色 callout 标注。
-- **风险与待确认**：`<ol><li seq="auto">` 列出（持久化链路、命名约定、依赖后端配置等），这是团队 CR 习惯。
+- **风险与待确认**：`<ol><li seq="auto">` 列出（持久化链路、命名约定、依赖后端配置等），这是多数团队 CR 习惯。
 - **工作量表**：thead 六列（系统/模块/需求点描述/开发人员/工作量人天/风险与依赖），系统列 rowspan 合并，开发人员用 cite；表前写开发分支与总人日。
-- **影响面评估**：保留模板引言 blockquote；按 页面 → 审单中心 → 机制/组件 → 历史/在途数据 分层写 `<ul>`；文中原有 `<sheet sheet-id token>` 用原 token 重新嵌入可保留。
-- **发布准备**：5.1 分支（迭代名 + feature/xxx-日期-wjr）、5.2 菜单（无则写无）、5.3 配置变更表（后端配置项、责任方）。
+- **影响面评估**：保留模板引言 blockquote；按 页面 → 关联中心/模块 → 机制/组件 → 历史/在途数据 分层写 `<ul>`；文中原有 `<sheet sheet-id token>` 用原 token 重新嵌入可保留。
+- **发布准备**：5.1 分支（迭代名 + 配置表的分支命名约定）、5.2 菜单（无则写无）、5.3 配置变更表（后端配置项、责任方）。
 - 措辞克制、直接给结论；不写空话套话；中文标点。
 
 ## 避坑清单

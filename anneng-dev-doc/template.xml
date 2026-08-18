@@ -13,10 +13,10 @@
 <tr><td><b>标题</b></td><td><b>内容</b></td></tr>
 <tr><td><b>产品参与人</b></td><td>待补充（cite type=user）</td></tr>
 <tr><td><b>后端参与人</b></td><td>待补充</td></tr>
-<tr><td><b>前端参与人</b></td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td></tr>
+<tr><td><b>前端参与人</b></td><td><cite type="user" user-id="ou_你的open_id"></cite></td></tr>
 <tr><td><b>UI参与人</b></td><td>-</td></tr>
 <tr><td><b>测试参与人</b></td><td>待补充</td></tr>
-<tr><td><b>飞书需求URL</b></td><td><a type="url-preview" href="https://project.feishu.cn/chintannengtech/story/detail/需求ID">[需求]需求标题</a></td></tr>
+<tr><td><b>飞书需求URL</b></td><td><a type="url-preview" href="https://project.feishu.cn/你的项目空间/story/detail/需求ID">[需求]需求标题</a></td></tr>
 <tr><td><b>PRD文档URL</b></td><td><cite type="doc" doc-id="PRD的wiki-token"></cite></td></tr>
 <tr><td><b>后端技术设计URL</b></td><td>待补充</td></tr>
 <tr><td><b>UI设计稿URL</b></td><td>-</td></tr>
@@ -28,7 +28,7 @@
 
 <h3>2.1 技术选型【技术栈、状态管理库、UI库、其它三方库】</h3>
 
-<p>前端框架：Vue 2.7；状态库：Vuex；路由：Vue Router 3；UI库：Element UI（业务页面）/ antd-vue 审核组件（审单中心）。本次迭代<b>不引入任何新三方依赖</b>。</p>
+<p>前端框架：框架及版本；状态库：状态管理方案；路由：路由库；UI库：组件库（按项目实际填写）。本次迭代<b>不引入任何新三方依赖</b>。</p>
 
 <h3>2.2 技术概设【方案描述、模块组件构成图、交互状态流转图】</h3>
 
@@ -79,19 +79,19 @@ flowchart TD
 
 <h3>2.3 非功能需求【性能、安全、浏览器兼容性、埋点】</h3>
 
-<p>与现有 LTC 基线保持一致，本次无新增要求；浏览器兼容沿用现状（Chrome、Edge 最新两个大版本）。</p>
+<p>与现有项目基线保持一致，本次无新增要求；浏览器兼容沿用现状（Chrome、Edge 最新两个大版本）。</p>
 
 <h1>三、工作量评估（对应飞书, 可截图）</h1>
 
-<p>开发分支：feature/xxx-日期-wjr</p>
+<p>开发分支：feature/xxx-日期-后缀（按团队分支命名约定）</p>
 
 <p>前端总人日：<b>Nd（Nh）</b>，其中纯编码约 xh，其余为配置验证、联调与测试。</p>
 
 <table>
 <thead><tr><th background-color="light-gray">系统</th><th background-color="light-gray">模块</th><th background-color="light-gray">需求点描述</th><th background-color="light-gray">开发人员</th><th background-color="light-gray">工作量（人天）</th><th background-color="light-gray">风险与依赖说明</th></tr></thead>
 <tbody>
-<tr><td rowspan="2" vertical-align="middle">LTC</td><td>模块A</td><td>需求点描述</td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td><td>0.5d</td><td>-</td></tr>
-<tr><td>联调与测试</td><td>联调、自测、回归</td><td><cite type="user" user-id="ou_532219c8f688a56f453bd32430ba8c17"></cite></td><td>0.5d</td><td>-</td></tr>
+<tr><td rowspan="2" vertical-align="middle">系统名</td><td>模块A</td><td>需求点描述</td><td><cite type="user" user-id="ou_你的open_id"></cite></td><td>0.5d</td><td>-</td></tr>
+<tr><td>联调与测试</td><td>联调、自测、回归</td><td><cite type="user" user-id="ou_你的open_id"></cite></td><td>0.5d</td><td>-</td></tr>
 </tbody>
 </table>
 
@@ -115,7 +115,7 @@ flowchart TD
 
 <p>迭代名：需求名称</p>
 
-<p>feature/xxx-日期-wjr</p>
+<p>feature/xxx-日期-后缀</p>
 
 <h3>5.2 菜单</h3>
 
