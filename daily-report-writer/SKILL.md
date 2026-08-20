@@ -1,7 +1,7 @@
 ---
 name: daily-report-writer
-description: 生成当前用户的工作日报：采集当天 git 提交、Meego（飞书项目）任务动态、飞书聊天记录，按固定三段式格式写成草稿，发飞书私信给本人审阅，确认后追加写入飞书日报文档。当用户提到写日报、生成日报、日报草稿、把日报写入文档，或由定时任务触发的每日日报时使用。
-version: 2.0.0
+description: 生成当前用户的工作日报：采集当天 git 提交、Meego（飞书项目）任务动态、飞书聊天记录，按固定三段式格式生成日报并直接写入飞书日报文档，随后通过飞书私信通知本人（bot 发送全文）。当用户提到写日报、生成日报、日报草稿、把日报写入文档，或由定时任务触发的每日日报时使用。
+version: 2.1.0
 ---
 
 # 日报生成工作流
@@ -20,7 +20,7 @@ version: 2.0.0
 | Meego 用户写法（可选） | `<姓名><id:<user_key>>` | Meego 成员信息中的数字 user_key |
 | lark-cli PATH（按需） | `<npm 全局 bin 目录>` | shell 找不到 lark-cli 时填写，`npm prefix -g` 定位 |
 
-## 流程 A：生成草稿并发送审阅（定时任务默认流程）
+## 流程：生成并写入日报文档（定时任务默认流程）
 
 ### 1. 取当天时间范围
 
@@ -80,17 +80,7 @@ lark-cli im +chat-messages-list --as user --chat-id <id> --start "${TODAY}T00:00
 
 风格要求：日期标题样式沿用文档既有写法（如 `2026 - 8 - 13`，数字间带空格、无前导零）；条目简洁、与历史日报同一语气；git 提交语译成业务话术（`feat:xxx对接前端界面基础` → 「xxx对接前端界面搭建」），不直接粘 commit message；聊天中的评审会、联调、需求沟通也算工作内容。
 
-### 5. 发送审阅
-
-```bash
-lark-cli im +messages-send --as bot --user-id <你的 open_id> --markdown "<草稿全文 + 末尾一行：以上为今日日报草稿，确认无误后在 QoderWork 说『写入日报』，或直接回复修改意见>"
-```
-
-**到此为止，不写文档。** 草稿同时存一份到工作区 `daily-report-draft-<TODAY>.md` 备用。
-
-> bot 私信前提：所用飞书自建应用需开通 `im:message` 权限并发布过版本；不可用时改为在 QoderWork 会话内直接出示草稿，其余流程不变。
-
-## 流程 B：确认后写入日报文档（用户说「写入日报/确认写入」时）
+### 5. 写入日报文档（无需确认，直接写入）
 
 1. 拉最新文档确认防重与月份小节：
 
@@ -98,8 +88,8 @@ lark-cli im +messages-send --as bot --user-id <你的 open_id> --markdown "<草�
 lark-cli docs +fetch --doc <你的日报文档 token> --doc-format markdown
 ```
 
-- 已存在 `## **<今天日期>**` → 提示已写过，询问是否覆盖该天（用 str_replace），默认不重复追加。
-- 检查当月一级标题（如 `# 八月日报`）是否存在；跨月时先在追加内容开头加 `# X月日报`（中文数字：一~十二月）。文档无此月份组织结构时，直接按既有结构追加。
+- 已存在 `## **<今天日期>**` → 不重复追加，改用 str_replace 覆盖该天内容
+- 检查当月一级标题（如 `# 八月日报`）是否存在；跨月时先在追加内容开头加 `# X月日报`（中文数字：一~十二月）。文档无此月份组织结构时，直接按既有结构追加
 
 2. 追加（stdin pipe，勿用 @绝对路径）：
 
@@ -107,7 +97,22 @@ lark-cli docs +fetch --doc <你的日报文档 token> --doc-format markdown
 cat daily-report-draft.md | lark-cli docs +update --as user --doc <你的日报文档 token> --command append --doc-format markdown --content -
 ```
 
-3. 重新 `+fetch` 验证今天的日期标题已在文末。
+3. 重新 `+fetch` 验证今天的日期标题已在文末、层级符合文档既有结构。
+
+### 6. 私信通知
+
+```bash
+lark-cli im +messages-send --as bot --user-id <你的 open_id> --markdown "<日报全文 + 末尾一行：今日日报已写入文档，如需修改直接回复或到 QoderWork 说明>"
+```
+
+草稿同时存一份到工作区 `daily-report-draft-<TODAY>.md` 备用。
+
+> bot 私信前提：所用飞书自建应用需开通 `im:message` 权限并发布过版本；不可用时改为在 QoderWork 会话内直接出示日报全文，其余流程不变。
+
+## 修改与重写（用户回复修改意见或要求重写时）
+
+- 小修：按用户意见改好对应条目，用 str_replace 更新文档中当天小节，改完重新 fetch 验证并回私信说明
+- 重写当天日报：重新采集成稿后用 str_replace 整体替换当天小节（勿重复追加）
 
 ## 易错点
 
@@ -115,10 +120,11 @@ cat daily-report-draft.md | lark-cli docs +update --as user --doc <你的日报�
 - MQL 三坑：字段是小写 `work_item_id`（写「工作项ID」会报错）；人员条件必须 `姓名<id:user_key>` 完整写法；日期必须 ISO 8601 带时区（`2026-08-12 00:00:00` 这种会报 invalid datetime format）。
 - chat-messages-list 不加 `--no-reactions` 会刷大量 reactions warning 且偶发报错。
 - 用户偏好轻量：草稿控制在 3~6 条要点，不要罗列每条聊天记录；不要加「总结/思考」除非用户要求。
-- 未获用户确认前绝不写日报文档。
+- 写入前必须先 fetch 防重：当天标题已存在时改用 str_replace 覆盖该天，绝不盲目重复追加。
 - 若计划用 QoderWork 定时任务每天触发本技能，配置必须已写回本文件（定时任务没有会话上下文，只能读技能内的配置）。
 
 ## 验证
 
-- 流程 A 成功 = 用户飞书私信收到草稿（bot 发送返回 ok:true）。
-- 流程 B 成功 = `+fetch` 结果末尾包含今天的 `## **<日期>**` 小节且层级符合文档既有结构。
+- 写入成功 = `+fetch` 结果末尾包含今天的 `## **<日期>**` 小节且层级符合文档既有结构。
+- 通知成功 = 用户飞书私信收到日报全文（bot 发送返回 ok:true）。
+- 空日 = 三路素材全空时静默结束，不写文档、不发消息。
